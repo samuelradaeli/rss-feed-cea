@@ -8,7 +8,7 @@ const PORT = process.env.PORT || 3000;
 
 // Configurações
 const MEMBERSTACK_API_URL = 'https://api.memberstack.com/v1/members';
-const MEMBERSTACK_API_KEY = 'sua-memberstack-api-key';
+const MEMBERSTACK_API_KEY = 'sk_3e6c18041235c5003e0e';
 const BUNNY_STORAGE_URL = 'https://storage.bunnycdn.com/cagando-e-andando/840282/';
 const BUNNY_PULL_ZONE_URL = 'https://warbox.b-cdn.net/840282';
 const BUNNY_API_KEY = 'c53674d5-1e1a-4187-a097-58f7fdb7e8ea43a4e453-c73d-4f76-a9dc-a7d057b328ed';
