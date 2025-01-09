@@ -5,30 +5,21 @@ const RSS = require('rss');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Certifique-se de que o app está escutando corretamente
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Servidor rodando na porta ${PORT}`);
-});
-
-
 // Configurações
 const MEMBERSTACK_API_URL = 'https://api.memberstack.com/v1/members';
-const MEMBERSTACK_API_KEY = 'sk_3e6c18041235c5003e0e'; // API Key fornecida
-const BUNNY_STORAGE_BASE_URL = 'https://storage.bunnycdn.com/cagando-e-andando/840282/'; // Caminho específico da pasta
-const BUNNY_PULL_ZONE_URL = 'https://warbox.b-cdn.net/840282'; // Pull Zone com caminho específico
-const BUNNY_API_KEY = 'c53674d5-1e1a-4187-a097-58f7fdb7e8ea43a4e453-c73d-4f76-a9dc-a7d057b328ed'; // API Key do Bunny.net
-const PASSWORD_PLACEHOLDER = '1234'; // Apenas um placeholder visível ao cliente
+const MEMBERSTACK_API_KEY = 'sk_3e6c18041235c5003e0e';
+const BUNNY_STORAGE_BASE_URL = 'https://storage.bunnycdn.com/cagando-e-andando/840282/';
+const BUNNY_PULL_ZONE_URL = 'https://warbox.b-cdn.net/840282';
+const BUNNY_API_KEY = 'c53674d5-1e1a-4187-a097-58f7fdb7e8ea43a4e453-c73d-4f76-a9dc-a7d057b328ed';
+const PASSWORD_PLACEHOLDER = '1234';
 
-// Middleware para parse de JSON
 app.use(express.json());
 
-// Validação de e-mail pelo Memberstack
+// Função para validar e-mails no Memberstack
 async function isEmailActive(email) {
   try {
     const response = await axios.get(MEMBERSTACK_API_URL, {
-      headers: {
-        Authorization: `Bearer ${MEMBERSTACK_API_KEY}`,
-      },
+      headers: { Authorization: `Bearer ${MEMBERSTACK_API_KEY}` },
     });
 
     const members = response.data.members || [];
@@ -39,23 +30,26 @@ async function isEmailActive(email) {
   }
 }
 
-// Função para buscar episódios de uma pasta específica na Storage Zone
+// Função para buscar episódios no Bunny.net
 async function getEpisodesFromBunny() {
   try {
     const response = await axios.get(BUNNY_STORAGE_BASE_URL, {
-      headers: {
-        AccessKey: BUNNY_API_KEY,
-      },
+      headers: { AccessKey: BUNNY_API_KEY },
     });
 
-    // Filtrar arquivos MP3 e mapear para URLs baseadas na Pull Zone configurada
     const files = response.data;
+
+    if (!files || files.length === 0) {
+      console.error('Nenhum arquivo encontrado na API do Bunny.net');
+      return [];
+    }
+
     return files
-      .filter(file => file.ObjectName.endsWith('.mp3'))
+      .filter(file => file.ObjectName && file.ObjectName.endsWith('.mp3'))
       .map(file => ({
-        title: file.ObjectName.replace('.mp3', ''), // Remover extensão para usar como título
-        url: `${BUNNY_PULL_ZONE_URL}/${file.ObjectName}`, // Gerar link usando a Pull Zone configurada
-        date: new Date(file.LastChanged), // Data da última modificação
+        title: file.ObjectName.replace('.mp3', ''),
+        url: `${BUNNY_PULL_ZONE_URL}/${file.ObjectName}`,
+        date: new Date(file.LastChanged),
       }));
   } catch (error) {
     console.error('Erro ao buscar episódios do Bunny.net:', error.message);
@@ -63,7 +57,7 @@ async function getEpisodesFromBunny() {
   }
 }
 
-// Rota para gerar o RSS
+// Rota para gerar o feed RSS
 app.get('/rss', async (req, res) => {
   const { email } = req.query;
 
@@ -77,14 +71,12 @@ app.get('/rss', async (req, res) => {
     return res.status(403).send('Acesso negado: Plano inativo ou e-mail inválido');
   }
 
-  // Buscar episódios da Bunny.net
   const episodes = await getEpisodesFromBunny();
 
   if (episodes.length === 0) {
     return res.status(500).send('Nenhum episódio encontrado');
   }
 
-  // Criar o feed RSS
   const feed = new RSS({
     title: 'Warbox Podcasts',
     description: 'Seu feed privado de podcasts',
@@ -93,7 +85,6 @@ app.get('/rss', async (req, res) => {
     language: 'pt-br',
   });
 
-  // Adicionar episódios ao feed
   episodes.forEach(episode => {
     feed.item({
       title: episode.title,
@@ -103,12 +94,11 @@ app.get('/rss', async (req, res) => {
     });
   });
 
-  // Enviar o feed como XML
   res.set('Content-Type', 'application/rss+xml');
   res.send(feed.xml());
 });
 
-// Página de login (com placeholder de senha)
+// Página de login com placeholder de senha
 app.get('/login', (req, res) => {
   res.send(`
     <html>
@@ -126,6 +116,6 @@ app.get('/login', (req, res) => {
 });
 
 // Iniciar o servidor
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`Servidor rodando na porta ${PORT}`);
 });
