@@ -5,6 +5,12 @@ const RSS = require('rss');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Certifique-se de que o app está escutando corretamente
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Servidor rodando na porta ${PORT}`);
+});
+
+
 // Configurações
 const MEMBERSTACK_API_URL = 'https://api.memberstack.com/v1/members';
 const MEMBERSTACK_API_KEY = 'sk_3e6c18041235c5003e0e'; // API Key fornecida
